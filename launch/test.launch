@@ -1,0 +1,12 @@
+<launch>
+  <!-- launch agent_1 with start position as [0,0,0] -->
+  <include file="$(find mz_wang_intern)/launch/agent.launch">
+    <arg name="serial_ID" value = "agent_1"/>
+    <arg name="start_position" value = "[0, 0, 0]"/>
+  </include>
+  <!-- launch agent_2 with start position as [5,5,0] -->
+  <include file="$(find mz_wang_intern)/launch/agent.launch">
+    <arg name="serial_ID" value = "agent_2"/>
+    <arg name="start_position" value = "[5, 5, 0]"/>
+  </include>
+</launch>

@@ -1,5 +1,5 @@
 string serial_id
-geometry_msgs/pose goal
+geometry_msgs/Pose goal
 ---
-geometry_msgs/pose[] path
+geometry_msgs/Pose[] path
 bool success

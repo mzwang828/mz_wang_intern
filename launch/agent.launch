@@ -1,0 +1,10 @@
+<launch>
+  <arg name = "serial_ID" defualt="agent_1"/>
+  <arg name = "start_position"/>
+  <node pkg="mz_wang_intern" type="agent" name="$(arg serial_ID)" output="screen">
+    <rosparam>
+      serial_id: "$(arg serial_ID)"
+      start_position: "$(start_position)"
+    </rosparam>
+  </node>
+</launch>
