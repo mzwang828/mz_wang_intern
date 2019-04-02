@@ -10,7 +10,7 @@ class Agent
     Agent(ros::NodeHandle n) : nh_(n)
     {
         // initialize publisher, service and subscriber
-        update_goal_srv_ = nh_.advertiseService("update_goal", &Agent::update_goal_callback, this);
+        update_goal_srv_ = nh_.advertiseService("update_goal", &Agent::UpdateGoalCallback, this);
         get_plan_client_ = nh_.serviceClient<mz_wang_intern::GetPlan>("/path_planner/get_plan");
         position_pub_ = nh_.advertise<geometry_msgs::Pose>("agent_feedback", 10);
         // get serial ID and start position from rosparam
@@ -18,7 +18,7 @@ class Agent
         nh_.getParam("start_position", start_position_);
     }
 
-    bool update_goal_callback(mz_wang_intern::GetPlan::Request &req, mz_wang_intern::GetPlan::Response &res)
+    bool UpdateGoalCallback(mz_wang_intern::GetPlan::Request &req, mz_wang_intern::GetPlan::Response &res)
     {
         mz_wang_intern::GetPlan plan_srv;
         plan_srv.request.serial_id = "1";
