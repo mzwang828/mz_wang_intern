@@ -1,0 +1,5 @@
+string serial_id
+geometry_msgs/pose goal
+---
+geometry_msgs/pose[] path
+bool success

@@ -1,0 +1,3 @@
+geometry_msgs/pose goal
+---
+bool success
