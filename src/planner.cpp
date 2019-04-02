@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "mz_wang_intern/GetPlan.h"
+#include "mz_wang_intern/Node.h"
 
 class PathPlanner
 {
@@ -22,6 +23,9 @@ class PathPlanner
   private:
     ros::NodeHandle nh_;
     ros::ServiceServer get_plan_server_;
+
+    // use a 2D matrix to represent the grid map
+    std::vector<std::vector<int> > map;
 };
 
 int main(int argc, char **argv)
