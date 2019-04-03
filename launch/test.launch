@@ -3,16 +3,14 @@
   <include file="$(find mz_wang_intern)/launch/agent.launch">
     <arg name="serial_ID" value = "agent_1"/>
     <arg name="start_position" value = "[0, 0, 0]"/>
-    <remap from="/agent_1/agent_feedback" to="/agent_feedback"/>
   </include>
 
   <!-- launch agent_2 with start position as [5,5,0] -->
   <include file="$(find mz_wang_intern)/launch/agent.launch">
     <arg name="serial_ID" value = "agent_2"/>
     <arg name="start_position" value = "[5, 5, 0]"/>
-    <remap from="/agent_2/agent_feedback" to="/agent_feedback"/>
   </include>
 
   <!-- run the planner node -->
-  <node pkg="mz_wang_intern" type="planner" name="planner" output="screen"/>
+  <node pkg="mz_wang_intern" type="planner" name="path_planner" output="screen"/>
 </launch>

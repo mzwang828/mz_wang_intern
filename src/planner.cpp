@@ -72,9 +72,9 @@ class PathPlanner
     }
 
     // check if one node is in the list(open or close)
-    Node *isInList(const std::list<Node *>& list, const Node *target)
+    Node *isInList(const std::list<Node *> &list, const Node *target)
     {
-        for (auto node: list)
+        for (auto node : list)
         {
             if (node->x == target->x && node->y == target->y)
                 return node;
@@ -170,10 +170,8 @@ class PathPlanner
         /* 
         call the FindPath function to explore the map and then construct the path backward from the goal node
         */
-        //Node start(agent_x_, agent_y_);
-        Node start(0, 0);
-        //Node goal(req.goal.position.x, req.goal.position.x);
-        Node goal(5, 5);
+        Node start(agent_x_, agent_y_);
+        Node goal(int(req.goal.position.x), int(req.goal.position.y));
         Node *result = FindPath(start, goal);
         geometry_msgs::PoseStamped pose;
         while (result != NULL)
