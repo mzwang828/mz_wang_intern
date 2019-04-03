@@ -1,7 +1,8 @@
 #include <ros/ros.h>
 #include <math.h>
 #include <iostream>
-
+#include <nav_msgs/Path.h>
+#include <geometry_msgs/Pose.h>
 #include "mz_wang_intern/UpdateGoal.h"
 #include "mz_wang_intern/GetPlan.h"
 class Agent
@@ -12,35 +13,32 @@ class Agent
         // initialize publisher, service and subscriber
         update_goal_srv_ = nh_.advertiseService("update_goal", &Agent::UpdateGoalCallback, this);
         get_plan_client_ = nh_.serviceClient<mz_wang_intern::GetPlan>("/path_planner/get_plan");
-        position_pub_ = nh_.advertise<geometry_msgs::Pose>("agent_feedback", 10);
+        feedback_pub_ = nh_.advertise<geometry_msgs::Pose>("agent_feedback", 10);
+        path_pub_ = nh_.advertise<nav_msgs::Path>("agent_path", 10);
         // get serial ID and start position from rosparam
         nh_.getParam("serial_ID", serial_id_);
         nh_.getParam("start_position", start_position_);
     }
 
-    bool UpdateGoalCallback(mz_wang_intern::GetPlan::Request &req, mz_wang_intern::GetPlan::Response &res)
+    bool UpdateGoalCallback(mz_wang_intern::UpdateGoal::Request &req, mz_wang_intern::UpdateGoal::Response &res)
     {
+        // construct and publish the start pose message
+        geometry_msgs::Pose start_pose;
+        start_pose.position.x = start_position_[0];
+        start_pose.position.y = start_position_[1];
+        feedback_pub_.publish(start_pose);
+        // construct the PlanPath request
         mz_wang_intern::GetPlan plan_srv;
         plan_srv.request.serial_id = "1";
-        plan_srv.request.goal.position.x = 0;
-        plan_srv.request.goal.position.y = 0;
+        plan_srv.request.goal = req.goal;
         if (get_plan_client_.call(plan_srv))
         {
-            ROS_INFO("Update goal service Called");
-            if (plan_srv.response.success)
-            {
-                ROS_INFO("get path");
-                res.success = true;
-            }
-            else
-            {
-                ROS_INFO("Cannot get path from planner.");
-                return false;
-            }
+            ROS_INFO("Successfully called service plan_path");
+            path_pub_.publish(plan_srv.response.path);   
         }
         else
         {
-            ROS_INFO("Failed call get plan service.");
+            ROS_INFO("Failed to call service plan_path.");
             return false;
         }
         return true;
@@ -50,7 +48,7 @@ class Agent
     ros::NodeHandle nh_;
     ros::ServiceServer update_goal_srv_;
     ros::ServiceClient get_plan_client_;
-    ros::Publisher position_pub_, path_pub_;
+    ros::Publisher feedback_pub_, path_pub_;
 
     std::string serial_id_;
     std::vector<double> start_position_;

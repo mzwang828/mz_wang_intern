@@ -3,8 +3,15 @@
 #include <iostream>
 #include <geometry_msgs/PoseStamped.h>
 #include "mz_wang_intern/GetPlan.h"
-#include "mz_wang_intern/Node.h"
-#include "mz_wang_intern/LinkedNode.h"
+
+
+struct Node
+{
+    int x,y;
+    int F,G,H;
+    Node *parent;
+    Node(int _x, int _y):x(_x), y(_y), F(0), G(0), H(0), parent(NULL){}
+};
 
 class PathPlanner
 {
@@ -12,6 +19,7 @@ class PathPlanner
     PathPlanner(ros::NodeHandle n) : nh_(n)
     {
         get_plan_server_ = nh_.advertiseService("get_plan", &PathPlanner::GetPlanCallback, this);
+        agent_feedback_sub_ = nh_.subscribe("/agent_feedback", 10, &PathPlanner::AgentFeedbackCallback, this);
         edge_cost_ = 10;
         // create the map
         for (int i; i < 11; i++)
@@ -21,32 +29,39 @@ class PathPlanner
         }
     }
 
-    // calculate cost G for target node
-    int calcG(mz_wang_intern::LinkedNode current, mz_wang_intern::LinkedNode target)
+    // get agent position from /agent_feedback topic
+    void AgentFeedbackCallback(const geometry_msgs::Pose &msg)
     {
-        return current.self.G + edge_cost_;
+        agent_x_ = msg.position.x;
+        agent_y_ = msg.position.y;
+    }
+
+    // calculate cost G for target node
+    int calcG(Node *current, Node *target)
+    {
+        return current->G + edge_cost_;
     }
     // calculate cost H for target node, manhattan distance is used here
-    int calcH(mz_wang_intern::LinkedNode target, mz_wang_intern::LinkedNode goal)
+    int calcH(Node *target, Node *goal)
     {
-        int H = edge_cost_ * abs(goal.self.position.x - target.self.position.x) + abs(goal.self.position.y - target.self.position.y);
+        int H = edge_cost_ * abs(goal->x - target->x) + abs(goal->y - target->y);
         return H;
     }
     // calculate total cost F
-    int calcF(mz_wang_intern::LinkedNode target)
+    int calcF(Node *target)
     {
-        return target.self.H + target.self.G;
+        return target->H + target->G;
     }
 
     // find the node with the least F from the open list, which will be visited as next step
-    mz_wang_intern::LinkedNode GetNextNode()
+    Node *GetNextNode()
     {
         if (!open_list_.empty())
         {
-            mz_wang_intern::LinkedNode next_node = open_list_.front();
+            Node *next_node = open_list_.front();
             for (auto node : open_list_)
             {
-                if (node.self.F < next_node.self.F)
+                if (node->F < next_node->F)
                     next_node = node;
             }
             return next_node;
@@ -56,39 +71,39 @@ class PathPlanner
     }
 
     // check if one node is in the list(open or close)
-    mz_wang_intern::LinkedNode isInList(std::list<mz_wang_intern::LinkedNode> list, mz_wang_intern::LinkedNode target)
+    Node *isInList(std::list<Node *> list, Node *target)
     {
         for (auto node : list)
         {
-            if (node.self.position.x == target.self.position.x && node.self.position.y == target.self.position.y)
+            if (node->x == target->x && node->y == target->y)
                 return node;
         }
         return NULL;
     }
 
     // check is the target node is reachable
-    bool isReachable(mz_wang_intern::LinkedNode target)
+    bool isReachable(Node *target)
     {
         // return false if the target node is outside of the map, is occupied by path of another agent, or is in the closed list
-        if (target.self.position.x < 0 || target.self.position.x > 10 || target.self.position.y < 0 || target.self.position.y > 10 || map_[target.self.position.x][target.self.position.y] == 1 || isInlist(close_list_, target))
+        if (target->x < 0 || target->x > 10 || target->y < 0 || target->y > 10 || map_[target->x][target->y] == 1 || isInList(close_list_, target))
             return false;
         else
             return true;
     }
 
     // get 4 connected nodes for a given node
-    std::vector<mz_wang_intern::LinkedNode> GetConnectedNodes(mz_wang_intern::LinkedNode current)
+    std::vector<Node *> GetConnectedNodes(Node *current)
     {
-        std::vector<mz_wang_intern::LinkedNode> connected_nodes;
+        std::vector<Node *> connected_nodes;
         for (int i = -1; i <= 1; i = i + 2)
         {
             // for each iteration, check the reachability of two connected nodes
             // new node is only added to the open list if reachable
-            mz_wang_intern::LinkedNode node_x, node_y;
-            node_x.self.position.x = current.self.position.x + i;
-            node_x.self.position.y = current.self.position.y;
-            node_y.self.position.x = current.self.position.x;
-            node_y.self.position.y = current.self.position.y + i;
+            Node *node_x, *node_y;
+            node_x->x = current->x + i;
+            node_x->y = current->y;
+            node_y->x = current->x;
+            node_y->y = current->y + i;
             if (isReachable(node_x))
                 connected_nodes.push_back(node_x);
             if (isReachable(node_y))
@@ -98,10 +113,10 @@ class PathPlanner
     }
 
     // find optimal path using A*
-    mz_wang_intern::LinkedNode FindPath(mz_wang_intern::LinkedNode &start, mz_wang_intern::LinkedNode &goal)
+    Node *FindPath(Node &start, Node &goal)
     {
         // add the start node to the open list
-        open_list_.push_back(start);
+        open_list_.push_back(new Node(start.x, start.y));
         while (!open_list_.empty())
         {
             /*
@@ -109,7 +124,7 @@ class PathPlanner
             Remove that node from open list and add it to close list
             Now visit the next node
             */
-            mz_wang_intern::LinkedNode next_node = GetNextNode();
+            Node *next_node = GetNextNode();
             open_list_.remove(next_node);
             close_list_.push_back(next_node);
             /*
@@ -118,7 +133,7 @@ class PathPlanner
             If no, add that node to the open list
             If yes, compare its cost G with new calculated cost G from current node and rewire the route
             */
-            std::vector<mz_wang_intern::LinkedNode> connected_nodes = GetConnectedNodes(next_node);
+            std::vector<Node *> connected_nodes = GetConnectedNodes(next_node);
             for (auto future_node : connected_nodes)
             {
                 if (!isInList(open_list_, future_node))
@@ -126,25 +141,25 @@ class PathPlanner
                     /*
                     For the connected node that is not in the open list, calcualte its cost and assigned current node as its parent.
                     */
-                    future_node.self.G = calcG(next_node, future_node);
-                    future_node.self.H = calcH(future_node, goal);
-                    future_node.self.F = calcF(future_node);
-                    future_node.parent = next_node;
+                    future_node->G = calcG(next_node, future_node);
+                    future_node->H = calcH(future_node, &goal);
+                    future_node->F = calcF(future_node);
+                    future_node->parent = next_node;
                     open_list_.push_back(future_node);
                 }
                 else
                 {
                     // For the connected node that is already in the open list, check if current node gives a smaller cost G
-                    if (calcG(next_node, future_node) < node.G)
+                    if (calcG(next_node, future_node) < future_node->G)
                     {
                         // if new cost G is smaller, assign new G to this node and change its parent to current node
-                        future_node.self.G = calcG(next_node, future_node);
-                        future_node.self.F = calcF(future_node);
-                        future_node.parent = next_node;
+                        future_node->G = calcG(next_node, future_node);
+                        future_node->F = calcF(future_node);
+                        future_node->parent = next_node;
                     }
                 }
                 // Check if the goal node is found; if so, exit the loop and we have the path
-                mz_wang_intern::LinkedNode final_node = isInList(open_list_, goal);
+                Node *final_node = isInList(open_list_, &goal);
                 if (final_node != NULL)
                     return final_node;
             }
@@ -157,16 +172,17 @@ class PathPlanner
         /* 
         call the FindPath function to explore the map and then construct the path backward from the goal node
         */
-        mz_wang_intern::LinkedNode goal, start;
-        goal.self.position = req.goal.position;
+        Node start(agent_x_, agent_y_);
+        Node goal(req.goal.position.x, req.goal.position.x);
 
-        mz_wang_intern::LinkedNode result = FindPath(start, goal);
+        Node *result = FindPath(start, goal);
         geometry_msgs::PoseStamped pose;
         while (result != NULL)
         {
-            pose.pose.position = result.self.position;
+            pose.pose.position.x = result->x;
+            pose.pose.position.y = result->y;
             res.path.poses.insert(res.path.poses.begin(), pose);
-            result = result.parent;
+            result = result->parent;
         }
         open_list_.clear();
         close_list_.clear();
@@ -186,13 +202,14 @@ class PathPlanner
   private:
     ros::NodeHandle nh_;
     ros::ServiceServer get_plan_server_;
-    int edge_cost_;
+    ros::Subscriber agent_feedback_sub_;
+    int edge_cost_, agent_x_, agent_y_;
     // use a 2D matrix to represent the grid map
-    std::vector<std::vector<int>> map_;
+    std::vector<std::vector<int> > map_;
     // open list to save nodes to be visited
-    std::list<mz_wang_intern::LinkedNode> open_list_;
+    std::list<Node *> open_list_;
     // close list to save nodes that have been visited
-    std::list<mz_wang_intern::LinkedNode> close_list_;
+    std::list<Node *> close_list_;
 };
 
 int main(int argc, char **argv)
