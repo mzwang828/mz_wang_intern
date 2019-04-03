@@ -27,18 +27,18 @@ class Agent
         start_pose.position.x = start_position_[0];
         start_pose.position.y = start_position_[1];
         feedback_pub_.publish(start_pose);
-        // construct the PlanPath request
+        // construct the GetPlan request
         mz_wang_intern::GetPlan plan_srv;
         plan_srv.request.serial_id = "1";
         plan_srv.request.goal = req.goal;
         if (get_plan_client_.call(plan_srv))
         {
-            ROS_INFO("Successfully called service plan_path");
+            ROS_INFO("Successfully called service get_plan");
             path_pub_.publish(plan_srv.response.path);   
         }
         else
         {
-            ROS_INFO("Failed to call service plan_path.");
+            ROS_INFO("Failed to call service get_plan.");
             return false;
         }
         return true;

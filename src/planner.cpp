@@ -4,28 +4,29 @@
 #include <geometry_msgs/PoseStamped.h>
 #include "mz_wang_intern/GetPlan.h"
 
-
 struct Node
 {
-    int x,y;
-    int F,G,H;
+    int x, y;
+    int F, G, H;
     Node *parent;
-    Node(int _x, int _y):x(_x), y(_y), F(0), G(0), H(0), parent(NULL){}
+    Node(int _x, int _y) : x(_x), y(_y), F(0), G(0), H(0), parent(NULL) {}
 };
 
 class PathPlanner
 {
   public:
-    PathPlanner(ros::NodeHandle n) : nh_(n)
+    PathPlanner(ros::NodeHandle n) : nh_(n), map_(11, std::vector<int>(11, 0))
     {
         get_plan_server_ = nh_.advertiseService("get_plan", &PathPlanner::GetPlanCallback, this);
         agent_feedback_sub_ = nh_.subscribe("/agent_feedback", 10, &PathPlanner::AgentFeedbackCallback, this);
         edge_cost_ = 10;
         // create the map
-        for (int i; i < 11; i++)
+        for (int i = 0; i < 11; i++)
         {
-            for (int j; j < 11; j++)
+            for (int j = 0; j < 11; j++)
+            {
                 map_[i][j] = 0;
+            }
         }
     }
 
@@ -71,9 +72,9 @@ class PathPlanner
     }
 
     // check if one node is in the list(open or close)
-    Node *isInList(std::list<Node *> list, Node *target)
+    Node *isInList(const std::list<Node *>& list, const Node *target)
     {
-        for (auto node : list)
+        for (auto node: list)
         {
             if (node->x == target->x && node->y == target->y)
                 return node;
@@ -99,11 +100,8 @@ class PathPlanner
         {
             // for each iteration, check the reachability of two connected nodes
             // new node is only added to the open list if reachable
-            Node *node_x, *node_y;
-            node_x->x = current->x + i;
-            node_x->y = current->y;
-            node_y->x = current->x;
-            node_y->y = current->y + i;
+            Node *node_x = new Node(current->x + i, current->y);
+            Node *node_y = new Node(current->x, current->y + i);
             if (isReachable(node_x))
                 connected_nodes.push_back(node_x);
             if (isReachable(node_y))
@@ -172,9 +170,10 @@ class PathPlanner
         /* 
         call the FindPath function to explore the map and then construct the path backward from the goal node
         */
-        Node start(agent_x_, agent_y_);
-        Node goal(req.goal.position.x, req.goal.position.x);
-
+        //Node start(agent_x_, agent_y_);
+        Node start(0, 0);
+        //Node goal(req.goal.position.x, req.goal.position.x);
+        Node goal(5, 5);
         Node *result = FindPath(start, goal);
         geometry_msgs::PoseStamped pose;
         while (result != NULL)
@@ -205,7 +204,7 @@ class PathPlanner
     ros::Subscriber agent_feedback_sub_;
     int edge_cost_, agent_x_, agent_y_;
     // use a 2D matrix to represent the grid map
-    std::vector<std::vector<int> > map_;
+    std::vector<std::vector<int>> map_;
     // open list to save nodes to be visited
     std::list<Node *> open_list_;
     // close list to save nodes that have been visited
