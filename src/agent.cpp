@@ -50,7 +50,7 @@ class Agent
     ros::NodeHandle nh_;
     ros::ServiceServer update_goal_srv_;
     ros::ServiceClient get_plan_client_;
-    ros::Publisher position_pub_;
+    ros::Publisher position_pub_, path_pub_;
 
     std::string serial_id_;
     std::vector<double> start_position_;

@@ -18,6 +18,7 @@
         "iosfwd": "cpp",
         "ratio": "cpp",
         "thread": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "cinttypes": "cpp"
     }
 }
