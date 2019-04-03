@@ -3,11 +3,33 @@
 #include <iostream>
 #include <geometry_msgs/PoseStamped.h>
 #include "mz_wang_intern/GetPlan.h"
+/*
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+The path planner implemented A* algorithm to find the shortest path for a given start and goal.
+The grid map is represented by using a 2D vector, whose size is 11*11. In the 2D vector, 0 means free space while
+1 means this node occupied by another agent's path.
 
+The class PathPlanner has following functions:
+---------------------------------------------------------------------------------------------------------------------
+calcG, calcF, calcH --- used to calculated respective cost of the node
+GetNextNode --- explore current open list to find the next node with least F to visit
+GetConnectedNodes --- get the 4-connected nodes for a given node
+isInList --- check if a given node is in open or close list
+isReachable --- check if a given node is reachable
+FindPath --- given start and goal position, perfrom A* searching
+---------------------------------------------------------------------------------------------------------------------
+AgentFeedbackCallback --- used to get agent postion from /agent_feedback topic
+GetPlanCallback --- callback function for /get_plan service. Receive goal position and agent serial_ID as request and 
+                    return the found path as response. 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
 struct Node
 {
+    // node coordinate, x for row number and y for column number
     int x, y;
+    // total cost F = G + H; G is the cost from start to current node, H is the heuristic cost from current node to goal
     int F, G, H;
+    // save parent information to create the path backward at the end
     Node *parent;
     Node(int _x, int _y) : x(_x), y(_y), F(0), G(0), H(0), parent(NULL) {}
 };
@@ -17,10 +39,12 @@ class PathPlanner
   public:
     PathPlanner(ros::NodeHandle n) : nh_(n), map_(11, std::vector<int>(11, 0))
     {
+        // initialize service server and subscrier
         get_plan_server_ = nh_.advertiseService("get_plan", &PathPlanner::GetPlanCallback, this);
         agent_feedback_sub_ = nh_.subscribe("/agent_feedback", 10, &PathPlanner::AgentFeedbackCallback, this);
+        // set edge cost as 10
         edge_cost_ = 10;
-        // create the map
+        // create the 2D vector to represent the map
         for (int i = 0; i < 11; i++)
         {
             for (int j = 0; j < 11; j++)
@@ -170,18 +194,24 @@ class PathPlanner
         /* 
         call the FindPath function to explore the map and then construct the path backward from the goal node
         */
+        // get start position from /agent_feedback topic
         Node start(agent_x_, agent_y_);
+        // get goal position from service request
         Node goal(int(req.goal.position.x), int(req.goal.position.y));
+        // call FindPath function to explore the map
         Node *result = FindPath(start, goal);
         geometry_msgs::PoseStamped pose;
         res.path.header.frame_id = "map";
         while (result != NULL)
         {
+            // find the path backward and construct a ros nav_msgs/Path message
             pose.pose.position.x = result->x;
             pose.pose.position.y = result->y;
             pose.header.frame_id = "map";
             res.path.poses.insert(res.path.poses.begin(), pose);
             result = result->parent;
+            // add found path as obstacle on the map, so other agents will not consider this path
+            map_[pose.pose.position.x][pose.pose.position.y] = 1;
         }
         open_list_.clear();
         close_list_.clear();
@@ -203,7 +233,7 @@ class PathPlanner
     ros::ServiceServer get_plan_server_;
     ros::Subscriber agent_feedback_sub_;
     int edge_cost_, agent_x_, agent_y_;
-    // use a 2D matrix to represent the grid map
+    // use a 2D vector to represent the grid map
     std::vector<std::vector<int>> map_;
     // open list to save nodes to be visited
     std::list<Node *> open_list_;

@@ -5,6 +5,14 @@
 #include <geometry_msgs/Pose.h>
 #include "mz_wang_intern/UpdateGoal.h"
 #include "mz_wang_intern/GetPlan.h"
+/*
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+The agent node provides 1 service and 2 publisher.
+feedback_pub --- publishes the agent position
+path_pub --- publishes the path return by /get_plan service
+update_goal service --- calls the /get_plan service and passes the agent serial_ID and goal as request
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
 class Agent
 {
   public:
@@ -22,7 +30,7 @@ class Agent
 
     bool UpdateGoalCallback(mz_wang_intern::UpdateGoal::Request &req, mz_wang_intern::UpdateGoal::Response &res)
     {
-        // construct and publish the start pose message
+        // construct and publish the start pose of the agent
         geometry_msgs::Pose start_pose;
         start_pose.position.x = start_position_[0];
         start_pose.position.y = start_position_[1];
@@ -31,15 +39,18 @@ class Agent
         mz_wang_intern::GetPlan plan_srv;
         plan_srv.request.serial_id = serial_id_;
         plan_srv.request.goal = req.goal;
+        // call the /get_plan service
         if (get_plan_client_.call(plan_srv))
         {
-            ROS_INFO("Successfully called service get_plan");
+            // if a valid path is returned
+            ROS_INFO("Successfully getting path from service /get_plan.");
             path_pub_.publish(plan_srv.response.path);
             res.success = true;
         }
         else
         {
-            ROS_INFO("Failed to call service get_plan.");
+            // if no valid path is returned or failed calling the service
+            ROS_INFO("Failed getting path from service /get_plan.");
             return false;
         }
         return true;
