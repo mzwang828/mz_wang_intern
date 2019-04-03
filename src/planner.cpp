@@ -174,10 +174,12 @@ class PathPlanner
         Node goal(int(req.goal.position.x), int(req.goal.position.y));
         Node *result = FindPath(start, goal);
         geometry_msgs::PoseStamped pose;
+        res.path.header.frame_id = "map";
         while (result != NULL)
         {
             pose.pose.position.x = result->x;
             pose.pose.position.y = result->y;
+            pose.header.frame_id = "map";
             res.path.poses.insert(res.path.poses.begin(), pose);
             result = result->parent;
         }
