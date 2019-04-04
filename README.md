@@ -33,7 +33,7 @@ rosrun mz_wang_intern planner
 roslaunch mz_wang_intern agent.launch serial_ID:="agent_1" start_position:=[0,0,0]
 ```
 ## Run the Test Case
-**For the convinience of test, a test launch file is provided** 
+**For the convinience of test, a **test.launch** file is provided** 
 
 Run the test.launch file will automatically start 3 nodes: the **planner**, an **agent_1** with start_position [0,0,0] and an **agent_2** with start_position [5,5,0]. Rviz will also be started to show the map and path. To run the test case:
 
