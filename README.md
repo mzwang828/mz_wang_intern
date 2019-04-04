@@ -47,16 +47,14 @@ To plan the path, one needs to call the service in a new terminal.
 source catkin_ws/devel/setup.bash
 # For agent 1
 rosservice call /agent_1/update_goal "goal:
-  position:
-    x: 5.0
-    y: 5.0
-    z: 0.0"
+  x: 5.0
+  y: 5.0
+  theta: 0.0"
 # For agent 2
 rosservice call /agent_2/update_goal "goal:
-  position:
-    x: 10.0
-    y: 8.0
-    z: 0.0"
+  x: 10.0
+  y: 8.0
+  theta: 0.0"
 ```
 **Note:** Once you source the workspace in the terminal, you can use TAB Completion to fill the service request automatically, and you only need to change those numbers, as shwon below.
 

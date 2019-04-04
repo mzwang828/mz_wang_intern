@@ -197,7 +197,7 @@ class PathPlanner
         // get start position from /agent_feedback topic
         Node start(agent_x_, agent_y_);
         // get goal position from service request
-        Node goal(int(req.goal.position.x), int(req.goal.position.y));
+        Node goal(int(req.goal.x), int(req.goal.y));
         // call FindPath function to explore the map
         Node *result = FindPath(start, goal);
         geometry_msgs::PoseStamped pose;
