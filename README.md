@@ -1,6 +1,6 @@
 # MZ_WANG_INTERN
 
-This ROS package demonstrates a path planner for a multiple agents scenario. This package includes two nodes: Planner and Agent. The Planner nodes provides a path planning service that implements A* to find the shortest path between a given start and a given goal on a 11*11 grid. The Agent node publishes the agent position as well as the found path returned by Planner.
+This ROS package demonstrates a path planner for a multiple agents scenario. This package includes two nodes: Planner and Agent. The Planner nodes provides a path planning service that implements A* to find the shortest path between a given start and a given goal on a 11*11 grid. The Agent node publishes the agent's position as well as the found path returned by Planner.
 
 This package has been tested under **Ubuntu 16.04** and **ROS Kinetic**. **C++ 11** is required for successful compilation. 
 
@@ -14,8 +14,7 @@ git clone https://github.com/mzwang828/mz_wang_intern.git
 catkin build
 ```
 
-## Usage
-### Run the node
+## Run single node
 Source the workspace first:
 
 ```bash
@@ -59,17 +58,17 @@ rosservice call /agent_2/update_goal "goal:
     y: 8.0
     z: 0.0"
 ```
-**Note:** Once you source the workspace in the terminal, you can use TAB Completion to fill the service request automatically, and you only need to change those numbers.
+**Note:** Once you source the workspace in the terminal, you can use TAB Completion to fill the service request automatically, and you only need to change those numbers, as shwon below.
 
 <img src="images/gif1.gif">
 
-## Screenshot
-Test Case
+## Screenshots
+Test Case:
 
 ![TestCase](images/screenshot1.png "Test Case Result")
-Avoid another agent's path
+Avoid another agent's path:
 
 ![avoid](images/screenshot2.png "Avoid another agent's path")
-Service list
+Service list:
 
 ![service](images/screenshot3.png "Service list")
